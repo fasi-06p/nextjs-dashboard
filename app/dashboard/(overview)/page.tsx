@@ -1,8 +1,4 @@
 import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Dashboard',
-};
 import CardWrapper from '@/app/ui/dashboard/cards';
 import RevenueChart from '@/app/ui/dashboard/revenue-chart';
 import LatestInvoices from '@/app/ui/dashboard/latest-invoices';
@@ -13,6 +9,13 @@ import {
   LatestInvoicesSkeleton,
   CardsSkeleton,
 } from '@/app/ui/skeletons';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+};
+
+// The dashboard uses live database data, so render it dynamically.
+export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   return (
