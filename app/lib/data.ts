@@ -337,7 +337,7 @@ export async function fetchCustomerById(
     };
   } catch (error) {
     console.error('Database Error:', error);
-    return undefined;
+    throw new Error('Failed to fetch customer.');
   }
 }
 

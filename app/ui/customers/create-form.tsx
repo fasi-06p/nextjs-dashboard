@@ -21,6 +21,7 @@ export default function CreateCustomerForm() {
   const initialState: CustomerState = {
     message: null,
     errors: {},
+    values: {},
   };
 
   const [state, formAction] = useActionState(
@@ -44,14 +45,22 @@ export default function CreateCustomerForm() {
             name="name"
             type="text"
             placeholder="Enter customer name"
+            defaultValue={state.values?.name || ''}
+            aria-describedby="name-error"
             className="block w-full rounded-md border border-gray-200 py-2 pl-3 text-sm outline-2 placeholder:text-gray-500"
           />
 
-          {state.errors?.name?.map((error) => (
-            <p key={error} className="mt-2 text-sm text-red-500">
-              {error}
-            </p>
-          ))}
+          <div
+            id="name-error"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {state.errors?.name?.map((error) => (
+              <p key={error} className="mt-2 text-sm text-red-500">
+                {error}
+              </p>
+            ))}
+          </div>
         </div>
 
         <div className="mb-4">
@@ -67,17 +76,25 @@ export default function CreateCustomerForm() {
             name="email"
             type="email"
             placeholder="Enter customer email"
+            defaultValue={state.values?.email || ''}
+            aria-describedby="email-error"
             className="block w-full rounded-md border border-gray-200 py-2 pl-3 text-sm outline-2 placeholder:text-gray-500"
           />
 
-          {state.errors?.email?.map((error) => (
-            <p key={error} className="mt-2 text-sm text-red-500">
-              {error}
-            </p>
-          ))}
+          <div
+            id="email-error"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {state.errors?.email?.map((error) => (
+              <p key={error} className="mt-2 text-sm text-red-500">
+                {error}
+              </p>
+            ))}
+          </div>
         </div>
 
-        <fieldset>
+        <fieldset aria-describedby="image-error">
           <legend className="mb-2 block text-sm font-medium">
             Choose an avatar
           </legend>
@@ -92,6 +109,9 @@ export default function CreateCustomerForm() {
                   type="radio"
                   name="image_url"
                   value={avatar}
+                  defaultChecked={
+                    state.values?.image_url === avatar
+                  }
                   className="mr-2"
                 />
 
@@ -106,18 +126,26 @@ export default function CreateCustomerForm() {
             ))}
           </div>
 
-          {state.errors?.image_url?.map((error) => (
-            <p key={error} className="mt-2 text-sm text-red-500">
-              {error}
-            </p>
-          ))}
+          <div
+            id="image-error"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {state.errors?.image_url?.map((error) => (
+              <p key={error} className="mt-2 text-sm text-red-500">
+                {error}
+              </p>
+            ))}
+          </div>
         </fieldset>
 
-        {state.message && (
-          <p className="mt-4 text-sm text-red-500">
-            {state.message}
-          </p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {state.message && (
+            <p className="mt-4 text-sm text-red-500">
+              {state.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 flex justify-end gap-4">

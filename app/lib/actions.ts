@@ -105,9 +105,10 @@ export async function updateInvoice(
   try {
     await sql`
       UPDATE invoices
-      SET customer_id = ${customerId},
-          amount = ${amountInCents},
-          status = ${status}
+      SET
+        customer_id = ${customerId},
+        amount = ${amountInCents},
+        status = ${status}
       WHERE id = ${id}
     `;
   } catch (error) {
@@ -167,22 +168,39 @@ export type CustomerState = {
     image_url?: string[];
   };
   message?: string | null;
+  values?: {
+    name?: string;
+    email?: string;
+    image_url?: string;
+  };
 };
+
+function isUniqueViolation(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === '23505'
+  );
+}
 
 export async function createCustomer(
   prevState: CustomerState,
   formData: FormData,
 ) {
-  const validatedFields = CustomerSchema.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-    image_url: formData.get('image_url'),
-  });
+  const values = {
+    name: formData.get('name')?.toString() || '',
+    email: formData.get('email')?.toString() || '',
+    image_url: formData.get('image_url')?.toString() || '',
+  };
+
+  const validatedFields = CustomerSchema.safeParse(values);
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Create Customer.',
+      values,
     };
   }
 
@@ -197,8 +215,19 @@ export async function createCustomer(
   } catch (error) {
     console.error('Create Customer Database Error:', error);
 
+    if (isUniqueViolation(error)) {
+      return {
+        errors: {
+          email: ['A customer with this email already exists.'],
+        },
+        message: 'Please use a different email address.',
+        values,
+      };
+    }
+
     return {
       message: 'Database Error: Failed to Create Customer.',
+      values,
     };
   }
 
@@ -211,16 +240,19 @@ export async function updateCustomer(
   prevState: CustomerState,
   formData: FormData,
 ) {
-  const validatedFields = CustomerSchema.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-    image_url: formData.get('image_url'),
-  });
+  const values = {
+    name: formData.get('name')?.toString() || '',
+    email: formData.get('email')?.toString() || '',
+    image_url: formData.get('image_url')?.toString() || '',
+  };
+
+  const validatedFields = CustomerSchema.safeParse(values);
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Update Customer.',
+      values,
     };
   }
 
@@ -238,8 +270,19 @@ export async function updateCustomer(
   } catch (error) {
     console.error('Update Customer Database Error:', error);
 
+    if (isUniqueViolation(error)) {
+      return {
+        errors: {
+          email: ['A customer with this email already exists.'],
+        },
+        message: 'Please use a different email address.',
+        values,
+      };
+    }
+
     return {
       message: 'Database Error: Failed to Update Customer.',
+      values,
     };
   }
 

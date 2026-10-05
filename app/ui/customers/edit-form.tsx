@@ -32,6 +32,11 @@ export default function EditCustomerForm({
   const initialState: CustomerState = {
     message: null,
     errors: {},
+    values: {
+      name: customer.name,
+      email: customer.email,
+      image_url: customer.image_url,
+    },
   };
 
   const updateCustomerWithId = updateCustomer.bind(
@@ -43,6 +48,11 @@ export default function EditCustomerForm({
     updateCustomerWithId,
     initialState,
   );
+
+  const currentName = state.values?.name ?? customer.name;
+  const currentEmail = state.values?.email ?? customer.email;
+  const currentAvatar =
+    state.values?.image_url ?? customer.image_url;
 
   return (
     <form action={formAction}>
@@ -56,18 +66,29 @@ export default function EditCustomerForm({
           </label>
 
           <input
+            key={`name-${currentName}`}
             id="name"
             name="name"
             type="text"
-            defaultValue={customer.name}
+            defaultValue={currentName}
+            aria-describedby="name-error"
             className="block w-full rounded-md border border-gray-200 py-2 pl-3 text-sm"
           />
 
-          {state.errors?.name?.map((error) => (
-            <p key={error} className="mt-2 text-sm text-red-500">
-              {error}
-            </p>
-          ))}
+          <div
+            id="name-error"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {state.errors?.name?.map((error) => (
+              <p
+                key={error}
+                className="mt-2 text-sm text-red-500"
+              >
+                {error}
+              </p>
+            ))}
+          </div>
         </div>
 
         <div className="mb-4">
@@ -79,21 +100,32 @@ export default function EditCustomerForm({
           </label>
 
           <input
+            key={`email-${currentEmail}`}
             id="email"
             name="email"
             type="email"
-            defaultValue={customer.email}
+            defaultValue={currentEmail}
+            aria-describedby="email-error"
             className="block w-full rounded-md border border-gray-200 py-2 pl-3 text-sm"
           />
 
-          {state.errors?.email?.map((error) => (
-            <p key={error} className="mt-2 text-sm text-red-500">
-              {error}
-            </p>
-          ))}
+          <div
+            id="email-error"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {state.errors?.email?.map((error) => (
+              <p
+                key={error}
+                className="mt-2 text-sm text-red-500"
+              >
+                {error}
+              </p>
+            ))}
+          </div>
         </div>
 
-        <fieldset>
+        <fieldset aria-describedby="image-error">
           <legend className="mb-2 block text-sm font-medium">
             Choose an avatar
           </legend>
@@ -108,7 +140,7 @@ export default function EditCustomerForm({
                   type="radio"
                   name="image_url"
                   value={avatar}
-                  defaultChecked={customer.image_url === avatar}
+                  defaultChecked={currentAvatar === avatar}
                   className="mr-2"
                 />
 
@@ -123,18 +155,29 @@ export default function EditCustomerForm({
             ))}
           </div>
 
-          {state.errors?.image_url?.map((error) => (
-            <p key={error} className="mt-2 text-sm text-red-500">
-              {error}
-            </p>
-          ))}
+          <div
+            id="image-error"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {state.errors?.image_url?.map((error) => (
+              <p
+                key={error}
+                className="mt-2 text-sm text-red-500"
+              >
+                {error}
+              </p>
+            ))}
+          </div>
         </fieldset>
 
-        {state.message && (
-          <p className="mt-4 text-sm text-red-500">
-            {state.message}
-          </p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {state.message && (
+            <p className="mt-4 text-sm text-red-500">
+              {state.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 flex justify-end gap-4">
