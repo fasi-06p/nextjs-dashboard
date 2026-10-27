@@ -1,3 +1,4 @@
+
 import bcrypt from 'bcryptjs';
 import postgres from 'postgres';
 import {
@@ -11,84 +12,56 @@ const sql = postgres(process.env.POSTGRES_URL!, {
   ssl: 'require',
 });
 
+// Database tables are created through SQL migration files
+// in supabase/migrations/, not by this seed route.
+
 async function seedUsers() {
-  await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+  for (const user of users) {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
-    );
-  `;
-
-  await Promise.all(
-    users.map(async (user) => {
-      const hashedPassword = await bcrypt.hash(
-        user.password,
-        10,
-      );
-
-      return sql`
-        INSERT INTO users (id, name, email, password)
-        VALUES (
-          ${user.id},
-          ${user.name},
-          ${user.email},
-          ${hashedPassword}
-        )
-        ON CONFLICT (id) DO NOTHING;
-      `;
-    }),
-  );
+    await sql`
+      INSERT INTO users (id, name, email, password)
+      VALUES (
+        ${user.id},
+        ${user.name},
+        ${user.email},
+        ${hashedPassword}
+      )
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
 }
 
 async function seedCustomers() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS customers (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) NOT NULL,
-      image_url VARCHAR(255) NOT NULL
-    );
-  `;
-
-  await sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS customers_email_unique
-    ON customers (email);
-  `;
-
-  await Promise.all(
-    customers.map(
-      (customer) => sql`
-        INSERT INTO customers (id, name, email, image_url)
-        VALUES (
-          ${customer.id},
-          ${customer.name},
-          ${customer.email},
-          ${customer.image_url}
-        )
-        ON CONFLICT (id) DO NOTHING;
-      `,
-    ),
-  );
+  for (const customer of customers) {
+    await sql`
+      INSERT INTO customers (id, name, email, image_url)
+      VALUES (
+        ${customer.id},
+        ${customer.name},
+        ${customer.email},
+        ${customer.image_url}
+      )
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
 }
 
 async function seedInvoices() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS invoices (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      customer_id UUID NOT NULL,
-      amount INT NOT NULL,
-      status VARCHAR(255) NOT NULL,
-      date DATE NOT NULL
-    );
-  `;
+  for (const invoice of invoices) {
+    // Avoid duplicate sample invoices when seeding again.
+    const existing = await sql`
+      SELECT id
+      FROM invoices
+      WHERE customer_id = ${invoice.customer_id}
+        AND amount = ${invoice.amount}
+        AND status = ${invoice.status}
+        AND date = ${invoice.date}
+      LIMIT 1;
+    `;
 
-  await Promise.all(
-    invoices.map(
-      (invoice) => sql`
+    if (existing.length === 0) {
+      await sql`
         INSERT INTO invoices (
           customer_id,
           amount,
@@ -101,31 +74,48 @@ async function seedInvoices() {
           ${invoice.status},
           ${invoice.date}
         );
-      `,
-    ),
-  );
+      `;
+    }
+  }
 }
 
 async function seedRevenue() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS revenue (
-      month VARCHAR(4) NOT NULL UNIQUE,
-      revenue INT NOT NULL
-    );
-  `;
-
-  await Promise.all(
-    revenue.map(
-      (rev) => sql`
-        INSERT INTO revenue (month, revenue)
-        VALUES (${rev.month}, ${rev.revenue})
-        ON CONFLICT (month) DO NOTHING;
-      `,
-    ),
-  );
+  for (const rev of revenue) {
+    await sql`
+      INSERT INTO revenue (month, revenue)
+      VALUES (${rev.month}, ${rev.revenue})
+      ON CONFLICT (month) DO NOTHING;
+    `;
+  }
 }
 
-export async function GET() {
+// Only allow seeding in development with a valid secret.
+export async function POST(request: Request) {
+  if (process.env.NODE_ENV !== 'development') {
+    return Response.json(
+      { error: 'Seeding is disabled outside development.' },
+      { status: 403 },
+    );
+  }
+
+  const configuredSecret = process.env.SEED_SECRET;
+
+  if (!configuredSecret) {
+    return Response.json(
+      { error: 'SEED_SECRET is not configured.' },
+      { status: 403 },
+    );
+  }
+
+  const providedSecret = request.headers.get('x-seed-secret');
+
+  if (providedSecret !== configuredSecret) {
+    return Response.json(
+      { error: 'Unauthorized.' },
+      { status: 401 },
+    );
+  }
+
   try {
     await seedUsers();
     await seedCustomers();
@@ -133,18 +123,13 @@ export async function GET() {
     await seedRevenue();
 
     return Response.json({
-      message: 'Database seeded successfully',
+      message: 'Development database seeded successfully.',
     });
-  } catch (error: any) {
-    console.error(error);
+  } catch (error) {
+    console.error('Database seeding failed.');
 
     return Response.json(
-      {
-        error:
-          error?.code ||
-          error?.message ||
-          String(error),
-      },
+      { error: 'Database seeding failed.' },
       { status: 500 },
     );
   }
