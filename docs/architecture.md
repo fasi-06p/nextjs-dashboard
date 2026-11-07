@@ -52,8 +52,6 @@ The data layer contains functions that retrieve information from the database. I
 
 The database stores application information, including users, customers, and invoices. It provides persistent storage so records remain available between sessions.
 
-
-
 ## T2.3 — Application Environments
 
 | Environment | URL | Database | Environment variables | Users |
@@ -85,15 +83,10 @@ Database schema changes are maintained as SQL migration files inside `supabase/m
 A schema change follows these steps:
 
 1. Create a new numbered SQL migration file.
-
 2. Review the SQL commands and test them on a development database.
-
 3. Commit the migration file to GitHub.
-
 4. Open a pull request for review.
-
 5. Apply the approved migration to the production database using a controlled migration process.
-
 6. Verify that the production application works correctly.
 
 Our application uses Neon PostgreSQL. The `supabase/migrations/` directory is used to organize SQL migration files as required by the assignment; it does not mean the database is hosted on Supabase.
@@ -131,18 +124,50 @@ Finally, I will archive the GitHub repository and document the retirement decisi
 ## Where New Features Belong
 
 - UI pages and layouts: `app/`
-
 - Interactive browser components: `app/ui/`
-
 - Server-side mutations: `app/lib/actions.ts`
-
 - Database read functions: `app/lib/data.ts`
-
 - Shared types: `app/lib/definitions.ts`
-
 - Database schema changes: `supabase/migrations/`
-
 - Architecture decisions: `docs/adr/`
 
-This structure helps developers identify where new features should be implemented and maintained.
+This structure helps developers identify where new features should be implemented and maintained. 
+
+
+
+## Existing Database Migration Baseline
+
+The application currently uses Neon PostgreSQL.
+
+The initial database schema was originally created through
+
+`app/seed/route.ts`.
+
+The schema definitions have now been moved into
+
+`supabase/migrations/202610270001_initial_schema.sql`.
+
+The existing production database already contains the application
+
+tables, so the initial migration must not be applied blindly.
+
+Before future migrations are applied:
+
+1. Compare the live database schema with the migration files.
+
+2. Establish a migration history for the existing database.
+
+3. Test new migrations on a separate Neon development branch.
+
+4. Review the changes through a GitHub pull request.
+
+5. Create a recovery point before risky production changes.
+
+6. Apply approved migrations to production.
+
+7. Verify the application after deployment.
+
+The initial migration is currently documented but has not been
+
+executed or registered as applied through a migration tool.
 
