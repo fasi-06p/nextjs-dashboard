@@ -1,6 +1,6 @@
+
 'use server';
 
-import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import postgres from 'postgres';
@@ -8,31 +8,13 @@ import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 import { randomUUID } from 'crypto';
 
+import {
+  CreateInvoice,
+  UpdateInvoice,
+  CustomerSchema,
+} from './schemas';
+
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
-
-const FormSchema = z.object({
-  id: z.string(),
-  customerId: z.string({
-    invalid_type_error: 'Please select a customer.',
-  }),
-  amount: z.coerce
-    .number()
-    .gt(0, { message: 'Please enter an amount greater than $0.' }),
-  status: z.enum(['pending', 'paid'], {
-    invalid_type_error: 'Please select an invoice status.',
-  }),
-  date: z.string(),
-});
-
-const CreateInvoice = FormSchema.omit({
-  id: true,
-  date: true,
-});
-
-const UpdateInvoice = FormSchema.omit({
-  id: true,
-  date: true,
-});
 
 export type State = {
   errors?: {
@@ -139,27 +121,6 @@ export async function deleteInvoice(id: string) {
 
   revalidatePath('/dashboard/invoices');
 }
-
-const allowedAvatars = [
-  '/customers/amy-burns.png',
-  '/customers/balazs-orban.png',
-  '/customers/delba-de-oliveira.png',
-  '/customers/evil-rabbit.png',
-  '/customers/lee-robinson.png',
-  '/customers/michael-novotny.png',
-] as const;
-
-const CustomerSchema = z.object({
-  name: z.string().trim().min(1, {
-    message: 'Please enter a customer name.',
-  }),
-  email: z.string().trim().email({
-    message: 'Please enter a valid email address.',
-  }),
-  image_url: z.enum(allowedAvatars, {
-    message: 'Please select an avatar.',
-  }),
-});
 
 export type CustomerState = {
   errors?: {
