@@ -111,3 +111,13 @@ Run the TypeScript check:
 `pnpm exec tsc --noEmit`
 
 Future database tests will use a dedicated test environment.
+## S5 Coverage Baseline
+
+Measured using `pnpm exec vitest run --coverage`.
+
+- Statements: 73.33%
+- Branches: 100%
+- Functions: 66.66%
+- Lines: 77.77%
+
+Coverage currently measures the tested utility and schema modules, not the entire application.
